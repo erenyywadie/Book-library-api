@@ -36,8 +36,8 @@ A simple RESTful API for managing a library of books, built with **Node.js**, **
 4. Create a `.env` file in the root folder with the following:
    ```env
    PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   DB_NAME=your_database_name
+   MONGODB_URI=MONGO_URI=mongodb+srv://aer32nu_db_user:INvf1KUB0hBhOfTT@cluster0.gmxvnbp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+   DB_NAME=test
    ```
 5. Run the server:
    ```bash
