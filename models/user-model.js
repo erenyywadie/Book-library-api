@@ -15,16 +15,25 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, "Please provide a password"],
-    minlength: 6
+    minlength: 6,
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user"
+  },
+  phone: {
+    type: String
   }
 });
 
-userSchema.pre("save", async function() {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
+userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
