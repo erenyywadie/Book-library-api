@@ -2,7 +2,7 @@ const User = require("../models/user-model");
 const jwt = require("jsonwebtoken");
 
 const signToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || "my-ultra-secret-key-is-here-12345", {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "90d"
   });
 };
@@ -15,6 +15,8 @@ exports.signup = async (req, res) => {
       email: req.body.email,
       password: req.body.password
     });
+
+    newUser.password = undefined;
 
     const token = signToken(newUser._id);
 
@@ -74,12 +76,11 @@ exports.protect = async (req, res, next) => {
       return res.status(401).json({ status: "fail", message: "You are not logged in! Please log in to get access." });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "my-ultra-secret-key-is-here-12345");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) {
-      return res.status(401).json({ status: "fail", message: "The user belonging to this token no longer does exist." });
+      return res.status(401).json({ status: "fail", message: "The user belonging to this token no longer exists." });
     }
 
     req.user = currentUser;
@@ -87,4 +88,14 @@ exports.protect = async (req, res, next) => {
   } catch (err) {
     return res.status(401).json({ status: "fail", message: "Invalid token or expired!" });
   }
+};
+
+// Restrict routes to specific roles (e.g. admin only)
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ status: "fail", message: "You do not have permission to perform this action." });
+    }
+    next();
+  };
 };
