@@ -1,4 +1,4 @@
-   # 📚 Book Library API
+Book Library API
 
 A simple RESTful API for managing a library of books, built with **Node.js**, **Express**, and **MongoDB**.
 
