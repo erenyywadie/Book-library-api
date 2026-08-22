@@ -1,4 +1,4 @@
-# 📚Book Library API
+# 📚 Book Library API
 
 A simple RESTful API for managing a library of books, built with **Node.js**, **Express**, and **MongoDB**.
 
@@ -43,6 +43,7 @@ A simple RESTful API for managing a library of books, built with **Node.js**, **
    JWT_SECRET=your_jwt_secret_key
    JWT_EXPIRES_IN=90d
    ```
+   > ⚠️ The `.env` file is excluded from version control via `.gitignore` and should never be committed. Use your own MongoDB credentials and a strong, unique `JWT_SECRET`.
 5. Run the server:
    ```bash
    node server.js
@@ -51,17 +52,17 @@ A simple RESTful API for managing a library of books, built with **Node.js**, **
 
 ## 📡 API Usage Examples
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/books` | Get all books |
-| POST | `/api/v1/books` | Create a new book (with cover image) |
-| PATCH | `/api/v1/books/:id` | Update a book |
-| DELETE | `/api/v1/books/:id` | Delete a book |
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | `/api/v1/books` | Get all books | Public |
+| POST | `/api/v1/books` | Create a new book (with cover image) | Admin only |
+| PATCH | `/api/v1/books/:id` | Update a book | Admin only |
+| DELETE | `/api/v1/books/:id` | Delete a book | Admin only |
 
 - **Get all books** – Sends a GET request to the books endpoint and returns a list of all books stored in the database.
-- **Create a new book** – Sends a POST request with the book details (title, author, category, price, published year) as form-data, including an image file for the book cover. The server saves the book data along with the uploaded image.
-- **Update a book** – Sends a PATCH request with the book's ID and the fields to be updated.
-- **Delete a book** – Sends a DELETE request with the book's ID to remove it from the database.
+- **Create a new book** – Sends a POST request with the book details (title, author, category, price, published year) as form-data, including an image file for the book cover. Requires a valid JWT token belonging to a user with the `admin` role. The server saves the book data along with the uploaded image.
+- **Update a book** – Sends a PATCH request with the book's ID and the fields to be updated. Admin only.
+- **Delete a book** – Sends a DELETE request with the book's ID to remove it from the database. Admin only.
 
 ### Users / Authentication
 
@@ -71,7 +72,9 @@ A simple RESTful API for managing a library of books, built with **Node.js**, **
 | POST | `/api/v1/users/login` | Authenticate a user and return a JWT token |
 | GET | `/api/v1/users/protected-test` | Example protected route (requires valid JWT) |
 
-**Signup** – Sends a POST request with `name`, `email`, and `password` to create a new user account. The password is hashed automatically before being saved, and the response includes a JWT token plus the created user's data.
+**User Model Fields:** `name`, `email`, `password` (hashed, never returned in responses), `role` (`user` or `admin`, defaults to `user`), `phone`.
+
+**Signup** – Sends a POST request with `name`, `email`, and `password` to create a new user account. The password is hashed automatically before being saved, and the response includes a JWT token plus the created user's data (password field excluded).
 
 Example request body:
 ```json
@@ -112,14 +115,46 @@ Example — `GET /api/v1/users/protected-test` returns:
 - The `restrictTo` middleware limits certain actions (e.g. creating, updating, or deleting books) to specific roles such as `admin`.
 
 **User Roles:**
-- `user` (default) – Regular user with standard access
-- `admin` – Has permission to perform restricted actions
+- `user` (default) – Regular user with standard access (can browse books, view details, manage own profile)
+- `admin` – Has permission to perform restricted actions (add, edit, and delete books)
+
+**Example — Admin-only route in practice:**
+
+`POST /api/v1/books` with a valid `admin` token:
+```json
+{
+  "status": "success",
+  "message": "Book created successfully",
+  "data": {
+    "book": {
+      "title": "The Alchemist",
+      "author": "Paulo Coelho",
+      "category": "Fiction",
+      "price": 150,
+      "_id": "6a872ddc93107d4c8a4e1ea3"
+    }
+  }
+}
+```
+→ Response: `201 Created`
+
+The same request with a valid but non-admin (`user`) token:
+```json
+{
+  "status": "fail",
+  "message": "You do not have permission to perform this action."
+}
+```
+→ Response: `403 Forbidden`
 
 ## 🧪 Testing with Postman
-- Registered a user via `/api/users/signup` and verified the returned JWT token
-- Tested `/api/users/login` with both correct and incorrect credentials
+- Registered a user via `/api/v1/users/signup` and verified the returned JWT token
+- Tested `/api/v1/users/login` with both correct and incorrect credentials
 - Used the returned token in the `Authorization` header to access a protected route
-- Verified that role-restricted routes correctly reject users without the required role
+- Verified that role-restricted routes (`POST`, `PATCH`, `DELETE` on `/api/v1/books`) correctly:
+  - Allow access when the token belongs to a user with the `admin` role (`201 Created`)
+  - Reject access when the token belongs to a regular `user` (`403 Forbidden`)
+- Screenshots of each test case (signup, login success/failure, protected route access, admin vs. user role check) are included in the submission
 
 ## 📁 Project Structure
 ```
@@ -131,3 +166,4 @@ Example — `GET /api/v1/users/protected-test` returns:
 ├── server.js
 └── README.md
 ```
+
